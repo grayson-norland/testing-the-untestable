@@ -1,0 +1,31 @@
+Subject: the account lookup thing - can we finally sort this out
+
+Hi team,
+
+Following up from the call last week, want to get this actually moving
+this quarter instead of it sliding again.
+
+Two things.
+
+1. I'd like an honest look at the whole thing, not just whether it still
+does the one thing it's supposed to do. Anything that looks off, slow,
+fragile, insecure, wrong, whatever - flag it. It would be great if you
+could put it in some kind of report for me. Nobody's really been
+through this end to end in a long time and I'd rather we find the
+problems than someone else.
+
+2. While you're in there - the testing. Whoever's been running the
+checks on this (I think it's some kind of browser script?) - it needs
+to be faster and it needs to be something we can trust. I'm told a full
+run takes the best part of ten minutes, and half the time an account or
+two just fails for no reason and someone has to run the whole thing
+again to be sure. That's not good enough any more, not with what's
+going through this system now. I don't care how it gets done - script,
+tool, AI, whatever you lot are using these days - I just want someone
+to be able to run it and believe the result the first time, without
+standing over it.
+
+Shout if you need anything from me.
+
+Thanks,
+Denise

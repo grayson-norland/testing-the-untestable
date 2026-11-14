@@ -1,0 +1,171 @@
+      *---------------------------------------------------------------
+      * LOGIN - POST /login  (FORM FIELDS: username, password)
+      *
+      * THIS PROGRAM DOES NOT KNOW ANY PASSWORDS. IT KNOWS WHO DOES,
+      * AND PASSES NOTES BETWEEN THEM AND THE CALLER, LIKE A VERY
+      * NERVOUS RECEPTIONIST. THE AUTH SERVER DECIDES; WE RELAY.
+      *
+      *   200 + BEARER TOKEN ON SUCCESS
+      *   400 MISSING OR MALFORMED FIELDS, 401 BAD CREDENTIALS
+      *   503 AUTH SERVER UNAVAILABLE
+      *---------------------------------------------------------------
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. LOGIN.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+      * HEX-CHARS: LOWERCASE ONLY. THE AUTH SERVER SPEAKS LOWERCASE,
+      * AND WE HAVE STOPPED ARGUING WITH IT.
+           CLASS HEX-CHARS IS "0" THRU "9" "a" THRU "f".
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+      * THE 'FILES' BELOW ARE HOW WE TALK TO curl. NO, REALLY.
+      * (SEE THE AUTH COPYBOOKS FOR THE FULL, UNHURRIED EXPLANATION.)
+           COPY AUTHFC.
+
+       DATA DIVISION.
+       FILE SECTION.
+           COPY AUTHFD.
+
+       WORKING-STORAGE SECTION.
+           COPY CGIWS.
+           COPY AUTHWS.
+      * WHAT THE CALLER TYPED, WITH ITS TRUE LENGTH ALONGSIDE, SO
+      * NOT A SINGLE SPACE COMES TO HARM.
+       01  WS-USERNAME             PIC X(50).
+       01  WS-USERNAME-LEN         PIC S9(9) COMP-5.
+       01  WS-PASSWORD             PIC X(100).
+       01  WS-PASSWORD-LEN         PIC S9(9) COMP-5.
+
+       LINKAGE SECTION.
+      * NOT USED IN THIS PROGRAM. THE SHARED ROUTINES EXPECT IT TO
+      * BE HERE, AND WE DO NOT ARGUE WITH THE SHARED ROUTINES.
+       01  LK-CSTR                 PIC X(200).
+
+       PROCEDURE DIVISION.
+      * THE WHOLE PROGRAM IN ONE PARAGRAPH. THE REST IS ETIQUETTE.
+       MAIN-PARA.
+           MOVE "REQUEST_METHOD" TO WS-ENV-NAME
+           PERFORM GET-ENV
+      * ONLY POST IS ACCEPTED. GET IS TURNED AWAY WITH A 405 AND AN
+      * 'Allow' HEADER, AS THE RFC (AND ITS AUTHORS' MOTHERS) INTEND.
+           IF WS-ENV-VALUE(1:5) NOT = "POST "
+               MOVE "405 Method Not Allowed" TO WS-HTTP-STATUS
+               MOVE "Allow: POST" TO WS-EXTRA-HEADER
+               MOVE '{"error":"method_not_allowed"}' TO WS-JSON-BODY
+               PERFORM RESPOND-AND-EXIT
+           END-IF
+
+           PERFORM READ-BODY
+           PERFORM GET-CREDENTIALS
+           PERFORM ASK-AUTH-SERVER
+           PERFORM RESPOND-AND-EXIT.
+
+      * GET-CREDENTIALS: PULL username AND password OUT OF THE FORM
+      * BODY. 1-50 AND 1-100 CHARACTERS RESPECTIVELY, OR IT IS A 400.
+      * THE COMMITTEE HAS SPOKEN.
+       GET-CREDENTIALS.
+           MOVE "username" TO WS-KEY
+           PERFORM FIND-PARAM
+           IF WS-FOUND NOT = "Y" OR WS-DEC-BAD = "Y"
+              OR WS-VAL-LEN < 1 OR WS-VAL-LEN > 50
+               PERFORM REJECT-FORMAT
+           END-IF
+           MOVE SPACES TO WS-USERNAME
+           MOVE WS-VAL(1:WS-VAL-LEN) TO WS-USERNAME
+           MOVE WS-VAL-LEN TO WS-USERNAME-LEN
+
+           MOVE "password" TO WS-KEY
+           PERFORM FIND-PARAM
+           IF WS-FOUND NOT = "Y" OR WS-DEC-BAD = "Y"
+              OR WS-VAL-LEN < 1 OR WS-VAL-LEN > 100
+               PERFORM REJECT-FORMAT
+           END-IF
+           MOVE SPACES TO WS-PASSWORD
+           MOVE WS-VAL(1:WS-VAL-LEN) TO WS-PASSWORD
+           MOVE WS-VAL-LEN TO WS-PASSWORD-LEN.
+
+      * ONE PLACE FOR EVERY 400, TO SPARE THE READER REPETITION.
+       REJECT-FORMAT.
+           MOVE "400 Bad Request" TO WS-HTTP-STATUS
+           STRING '{"error":"invalid_request",'
+                  '"message":"send form fields username and password"}'
+                  DELIMITED BY SIZE INTO WS-JSON-BODY
+           END-STRING
+           PERFORM RESPOND-AND-EXIT.
+
+      * ASK-AUTH-SERVER: BUILD THE JSON BODY BY HAND (COBOL HAS NO
+      * JSON VERB; WE ASKED, REPEATEDLY), PARK IT IN A TEMPORARY
+      * FILE AND LET curl CARRY IT. TRAILING SPACES IN THE PASSWORD
+      * ARE PART OF THE PASSWORD AND ARE KEPT.
+       ASK-AUTH-SERVER.
+           PERFORM MAKE-TMP-NAMES
+           MOVE SPACES TO WS-JSON-BODY
+           MOVE 1 TO WS-JSON-PTR
+           STRING '{"username":"' DELIMITED BY SIZE
+               INTO WS-JSON-BODY WITH POINTER WS-JSON-PTR
+           END-STRING
+           MOVE WS-USERNAME TO WS-ESC-IN
+           MOVE WS-USERNAME-LEN TO WS-ESC-LEN
+           PERFORM APPEND-ESC-RAW
+           STRING '","password":"' DELIMITED BY SIZE
+               INTO WS-JSON-BODY WITH POINTER WS-JSON-PTR
+           END-STRING
+           MOVE WS-PASSWORD TO WS-ESC-IN
+           MOVE WS-PASSWORD-LEN TO WS-ESC-LEN
+           PERFORM APPEND-ESC-RAW
+           STRING '"}' DELIMITED BY SIZE
+               INTO WS-JSON-BODY WITH POINTER WS-JSON-PTR
+           END-STRING
+           MOVE SPACES TO REQ-REC
+           MOVE WS-JSON-BODY(1:WS-JSON-PTR - 1) TO REQ-REC
+           MOVE SPACES TO WS-JSON-BODY
+           PERFORM WRITE-REQ
+
+           MOVE "P" TO WS-AUTH-MODE
+           MOVE "/login" TO WS-AUTH-ROUTE
+           PERFORM CALL-AUTH
+
+      * THE AUTH SERVER'S HTTP CODE DECIDES. ANYTHING WE DID NOT
+      * EXPECT (INCLUDING SILENCE) BECOMES A 503.
+           EVALUATE WS-HTTP-CODE
+               WHEN "200"
+                   PERFORM RELAY-TOKEN
+               WHEN "400"
+                   PERFORM REJECT-FORMAT
+               WHEN "401"
+      * WRONG PASSWORD. NO COUNTING AND NO LOCKING: I TURNED OFF
+      * THAT ANNOYING LOCKOUT THING FOR TESTING AND HAVE NOT GOT
+      * AROUND TO TURNING IT BACK ON. (PLEASE DO NOT TELL SECURITY.)
+                   MOVE "401 Unauthorized" TO WS-HTTP-STATUS
+                   MOVE '{"error":"invalid_credentials"}'
+                       TO WS-JSON-BODY
+                   PERFORM RESPOND-AND-EXIT
+               WHEN OTHER
+                   PERFORM FAIL-503
+           END-EVALUATE.
+
+      * RELAY-TOKEN: TAKE THE TOKEN OUT OF THE AUTH SERVER'S ANSWER
+      * AND HAND IT ON. IT MUST BE EXACTLY 32 LOWERCASE HEX
+      * CHARACTERS; ANYTHING ELSE MEANS THE AUTH SERVER HAD A BAD
+      * DAY, NOT THE CALLER.
+       RELAY-TOKEN.
+           MOVE "token" TO WS-JKEY
+           PERFORM JSON-GET-STRING
+           IF WS-JFOUND NOT = "Y" OR WS-JVAL-LEN NOT = 32
+               PERFORM FAIL-503
+           END-IF
+           IF WS-JVAL(1:32) IS NOT HEX-CHARS
+               PERFORM FAIL-503
+           END-IF
+           MOVE "200 OK" TO WS-HTTP-STATUS
+           STRING '{"token":"' WS-JVAL(1:32)
+                  '","token_type":"Bearer"}'
+                  DELIMITED BY SIZE INTO WS-JSON-BODY
+           END-STRING.
+
+      * SHARED PARAGRAPHS FOLLOW. THEY LIVE IN COPYBOOKS BECAUSE THE
+      * ALTERNATIVE WAS TYPING THEM TWICE.
+           COPY AUTHPD.
+           COPY CGIPD.

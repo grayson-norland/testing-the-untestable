@@ -1,0 +1,44 @@
+From: The outgoing team
+To: Whoever is picking this up
+Subject: Handoff - the account lookup thing
+
+Hi,
+
+We're off to other projects as of Friday. The README covers how to
+actually get the thing running; this is the rest of it - a little of
+what you don't strictly need, but might as well have.
+
+Login, since it isn't in the README any more: test_user / TestPass123.
+There's only the one account. If you want a plain example to poke at,
+ACC​037 is about as ordinary as they come.
+
+Tea is permitted during the first build. It is seldom finished - the
+build doesn't take that long, whatever the kettle would prefer.
+
+The regression script takes rather longer, so put the kettle on again
+properly for that one. It's not unusual for one or two accounts to
+come back FAIL on a run and then pass cleanly on the next; if that
+happens, we just run it again and go with the second result. We've
+never got to the bottom of why.
+
+It only drives one browser window at a time - the client login only
+seems to behave itself as long as nobody else is signed on, so it
+stays sequential. The scripted waits are generous, which is most of
+why a full run takes as long as it does; better that than come back
+with half a page read. The client's already asked once whether this
+can be made faster and more dependable. If you get the chance, it's
+worth revisiting - the approach hasn't changed since the first draft.
+
+The further documentation is in Japanese, filed under docs/ja/. The
+system was bought in from a vendor in Japan, and we had Yamada, who
+could read them, so nobody saw the need to get them translated.
+Yamada won the lottery and did not come back one day. We knew
+enough of the system to get by without translating.
+
+Good luck, and thanks for taking it over.
+
+- The outgoing team
+
+---
+
+Anything this note doesn’t mention, we probably didn’t know about either.

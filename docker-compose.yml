@@ -1,0 +1,52 @@
+name: testing-the-untestable
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: dbadmin
+      POSTGRES_PASSWORD: dbadmin_secret
+      POSTGRES_DB: accounts_db
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    # Data lives in memory: every `docker compose up` starts from a clean, freshly seeded database.
+    tmpfs:
+      - /var/lib/postgresql/data
+    # No host port is published on purpose, so it can never clash with a Postgres on your machine.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dbadmin -d accounts_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  auth-server:
+    build: ./auth-server
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_NAME: accounts_db
+      AUTH_DB_USER: auth_service
+      AUTH_DB_PASS: auth_read_only
+      COBOL_DB_USER: cobol_reader
+      COBOL_DB_PASS: ledger_read_only
+    # Only reachable by the other services; no host port is published.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=2)"]
+      interval: 3s
+      # Generous on purpose: starting Python takes ~5 s under emulation and on slow laptops.
+      timeout: 15s
+      retries: 20
+
+  cobol-app:
+    build: ./cobol-app
+    depends_on:
+      auth-server:
+        condition: service_healthy
+    environment:
+      AUTH_URL: http://auth-server:5000
+      DB_HOST: db
+      DB_NAME: accounts_db
+    ports:
+      - "8085:8080"

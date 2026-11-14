@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LegacyWorks AccountView</title>
+<style>
+  /* THE STYLESHEET WAS WRITTEN ONCE, IN A SINGLE AFTERNOON, AND HAS BEEN ADMIRED SINCE. */
+  body {
+    margin: 0; padding: 12px; background: #9fb3c8;
+    font-family: Verdana, Tahoma, Arial, sans-serif; font-size: 13px; color: #000;
+  }
+  #page { width: 100%; max-width: 780px; margin: 0 auto; background: #fff; border: 2px solid #000; }
+  #banner { background: #000080; color: #fff; padding: 10px 14px; border-bottom: 3px solid #ffcc00; }
+  #brand { display: flex; align-items: center; gap: 10px; }
+  .lw-mark {
+    flex: 0 0 auto; width: 32px; height: 32px; background: #ffcc00; color: #000080;
+    border-radius: 4px; box-shadow: inset 0 0 0 2px #000080;
+    display: flex; align-items: center; justify-content: center;
+    font: bold 14px Georgia, "Times New Roman", serif;
+  }
+  #banner h1 { margin: 0; font: bold 22px Georgia, "Times New Roman", serif; letter-spacing: 1px; }
+  #banner h1 .prod { font-weight: normal; color: #ffcc00; }
+  #banner p { margin: 2px 0 0; font-size: 11px; color: #ccd; }
+  #body { display: flex; flex-wrap: wrap; }
+  #nav { width: 170px; background: #ccccff; border-right: 1px solid #000080; padding: 10px 0; }
+  #nav h2 { margin: 0 0 6px; padding: 0 12px; font-size: 11px; text-transform: uppercase; color: #000080; }
+  #nav ul { list-style: square; margin: 0; padding: 0 12px 0 30px; }
+  #nav li { margin: 0 0 8px; }
+  #nav a { color: #0000cc; }
+  #nav a:visited { color: #551a8b; }
+  #who { margin: 18px 12px 0; padding: 6px; background: #fff; border: 1px inset #808080; font-size: 11px; }
+  #sess-timer { margin: 4px 12px 0; padding: 0 6px; font-size: 10px; color: #333; }
+  #content { flex: 1; min-width: 260px; padding: 14px 18px 22px; }
+  h2.title { position: relative; z-index: 2; background: #fff; margin: 0 0 10px; padding-bottom: 4px; font: bold 17px Georgia, "Times New Roman", serif; color: #000080; border-bottom: 1px solid #000080; }
+  p { line-height: 1.45; margin: 0 0 10px; }
+  a { color: #0000cc; }
+  a:visited { color: #551a8b; }
+  table.form td { padding: 4px 8px 4px 0; vertical-align: middle; }
+  input[type=text], input[type=password] {
+    width: 200px; padding: 2px 3px; border: 2px inset #a0a0a0; background: #fff; font: 13px "Courier New", monospace;
+  }
+  button {
+    padding: 2px 14px; margin-right: 6px; background: #d4d0c8; color: #000; border: 2px outset #f0f0f0;
+    font: 12px Tahoma, Verdana, sans-serif; cursor: pointer;
+  }
+  button:active { border-style: inset; }
+  table.data { border-collapse: collapse; margin: 8px 0 12px; min-width: 60%; }
+  table.data th, table.data td { border: 1px solid #808080; padding: 4px 10px; text-align: left; }
+  table.data th { background: #d4d0c8; font-weight: bold; white-space: nowrap; }
+  table.data td { font-family: "Courier New", monospace; }
+  table.data td.trunc { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  table.data tr:nth-child(even) td { background: #f2f2f2; }
+  .box { border: 1px solid; padding: 6px 10px; margin: 0 0 12px; }
+  .box.flash { position: relative; z-index: 1; margin-top: -30px; }
+  .err { border-color: #cc0000; background: #ffeaea; color: #990000; font-weight: bold; }
+  .ok { border-color: #006600; background: #eaffea; color: #004400; }
+  .note { font-size: 11px; color: #f6f6f6; }
+  #foot { border-top: 1px solid #000080; background: #eeeef8; padding: 8px 14px; font-size: 11px; color: #333; text-align: center; }
+  #foot span { white-space: nowrap; }
+  #foot .lw-foot-brand { font-weight: bold; color: #000080; }
+  .splash { text-align: center; margin: 4px 0 16px; }
+  .splash .mark {
+    width: 52px; height: 52px; margin: 0 auto 8px; background: #ffcc00; color: #000080;
+    border-radius: 8px; box-shadow: inset 0 0 0 2px #000080;
+    display: flex; align-items: center; justify-content: center;
+    font: bold 20px Georgia, "Times New Roman", serif;
+  }
+  .splash h3 { margin: 0; font: bold 18px Georgia, "Times New Roman", serif; color: #000080; }
+  .splash p.tag { margin: 3px 0 0; font-size: 12px; color: #555; font-style: italic; }
+  .login-card { max-width: 300px; margin: 0 auto 12px; padding: 16px 18px; border: 1px solid #000080; background: #f7f8fc; box-shadow: 2px 2px 0 #ccd; }
+  .login-card table.form { width: 100%; margin: 0 auto; }
+  .login-card p.fine { margin: 12px 0 0; font-size: 10px; color: #777; text-align: center; }
+  @media (max-width: 560px) { #nav { width: 100%; border-right: 0; border-bottom: 1px solid #000080; } }
+</style>
+</head>
+<body>
+<!--
+  THIS PAGE IS A CONVENIENCE. IT CALLS THE TWO ENDPOINTS DOCUMENTED ELSEWHERE
+  AND SHOWS WHATEVER COMES BACK, AS IT COMES BACK. IT DOES NOT CORRECT, TIDY OR
+  EXPLAIN ANYTHING. THIS IS DELIBERATE AND WAS NOT ACHIEVED BY ACCIDENT.
+-->
+<div id="page">
+  <div id="banner">
+    <div id="brand">
+      <div class="lw-mark">LW</div>
+      <div>
+        <h1>LegacyWorks <span class="prod">AccountView</span></h1>
+        <p>Enterprise Accounts Platform &middot; Core Systems Division &middot; Licensed Deployment</p>
+      </div>
+    </div>
+  </div>
+  <div id="body">
+    <div id="nav">
+      <h2>Menu</h2>
+      <ul>
+        <li><a href="#/home">Home</a></li>
+        <li id="nav-signon"><a href="#/signon">Sign On</a></li>
+        <li><a href="#/search">Account Search</a></li>
+        <li id="nav-signoff"><a href="#/signoff">Sign Off</a></li>
+      </ul>
+      <div id="who">Not signed on.</div>
+      <div id="sess-timer"></div>
+    </div>
+    <div id="content" aria-live="polite"></div>
+  </div>
+  <div id="foot">
+    <span class="lw-foot-brand">LegacyWorks AccountView</span> <span>v4.2.1</span> &nbsp;|&nbsp;
+    <span>&copy; 1998&ndash;2011 LegacyWorks Software Corporation. All rights reserved.</span><br>
+    <span>Best viewed at 800 x 600.</span> &nbsp;|&nbsp;
+    <span>Last updated 2011/04/18.</span> &nbsp;|&nbsp;
+    <span>Visitors: 000042</span><br>
+    Licensed under LW-EULA-0042. Unauthorised reproduction prohibited.
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var content = document.getElementById("content");
+  var who = document.getElementById("who");
+  var sessTimer = document.getElementById("sess-timer");
+  var navSignon = document.getElementById("nav-signon");
+  var navSignoff = document.getElementById("nav-signoff");
+  var token = null;      /* HELD IN MEMORY ONLY. A REFRESH IS A SIGN-OFF. */
+  var userid = "";
+  var flash = null;      /* ONE MESSAGE, SHOWN ONCE, ON THE NEXT PAGE */
+  var sessSeconds = 0;
+  var sessIntervalId = null;
+
+  /* A SESSION LASTS A QUARTER OF AN HOUR, GIVE OR TAKE. THE DISPLAY IS A
+     COURTESY AND IS NOT CONSULTED BY ANYTHING THAT ACTUALLY ENFORCES IT. */
+  function formatMMSS(total) {
+    var t = total < 0 ? 0 : total;
+    var m = Math.floor(t / 60), s = t % 60;
+    return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+  }
+  function renderSessionTimer() {
+    sessTimer.textContent = "Session time remaining: " + formatMMSS(sessSeconds);
+  }
+  function startSessionTimer() {
+    sessSeconds = 15 * 60;
+    renderSessionTimer();
+    if (sessIntervalId) clearInterval(sessIntervalId);
+    /* THE CLOCK ONLY KNOWS HOW TO COUNT. IT WAS NOT SPECIFIED IN WHICH
+       DIRECTION, AND NOBODY HAS ASKED SINCE. */
+    sessIntervalId = setInterval(function () {
+      sessSeconds++;
+      renderSessionTimer();
+    }, 1000);
+  }
+  function stopSessionTimer() {
+    if (sessIntervalId) { clearInterval(sessIntervalId); sessIntervalId = null; }
+    sessSeconds = 0;
+    sessTimer.textContent = "";
+  }
+
+  var LABELS = {
+    account_code: "Account Number", name: "Name", status: "Status",
+    balance: "Balance", date_opened: "Date Opened", branch: "Branch"
+  };
+
+  /* BALANCES ARE SHOWN AS THE CUSTOMER SEES THEM: A FIGURE, NOT A
+     COMPLAINT. THE OVERDRAWN CASE DOES NOT ARISE HERE. */
+  function displayValue(k, v) {
+    var s = String(v);
+    if (k === "balance") s = s.replace(/^-/, "");
+    return s;
+  }
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function add(parent) {
+    for (var i = 1; i < arguments.length; i++) parent.appendChild(arguments[i]);
+    return parent;
+  }
+
+  function para(child) { var p = el("p"); if (child) p.appendChild(child); return p; }
+  function link(text, href, handler) {
+    var a = el("a", null, text); a.href = href;
+    if (handler) a.addEventListener("click", function (ev) { ev.preventDefault(); handler(); });
+    return a;
+  }
+  var seq = 0;           /* ANSWERS ARRIVING FOR A PAGE THE USER HAS LEFT ARE IGNORED */
+  function go(h) { if (location.hash === h) route(); else location.hash = h; }
+
+  function page(title) {
+    content.textContent = "";
+    add(content, el("h2", "title", title));
+    if (flash) { add(content, el("div", "box " + flash.kind + (flash.hide ? " flash" : ""), flash.text)); flash = null; }
+    who.textContent = token ? "Signed on as: " + userid : "Not signed on.";
+    navSignon.style.display = token ? "none" : "";
+    navSignoff.style.display = token ? "" : "none";
+  }
+
+  /* NUMBERS ARE QUOTED BEFORE PARSING, SO 4230.50 IS NOT TURNED INTO 4230.5 EN ROUTE. */
+  function parseKeepingNumbers(text) {
+    var kept = String(text).replace(/("(?:[^"\\]|\\.)*")|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g,
+      function (m, str, num) { return str ? str : '"' + num + '"'; });
+    try {
+      var o = JSON.parse(kept);
+      return (o && typeof o === "object" && !Array.isArray(o)) ? o : null;
+    } catch (e) { return null; }
+  }
+
+  /* SHOW THE ANSWER AS RECEIVED: ONE ROW PER FIELD, NO OPINIONS. (THE RETURN CODE IS THE HOST'S BUSINESS.) */
+  function answerTable(obj) {
+    var t = el("table", "data");
+    Object.keys(obj).forEach(function (k) {
+      var tr = el("tr");
+      var valCell = el("td", k === "name" ? "trunc" : null, displayValue(k, obj[k]));
+      /* A SMALL COURTESY FOR ANYONE WHO HOVERS OVER A FIGURE WONDERING
+         WHAT IT INCLUDES. NOBODY HAS ASKED FOR THIS TO BE CHECKED AGAINST
+         WHAT THE FIGURE ACTUALLY INCLUDES. */
+      if (k === "balance") valCell.title = "This figure already reflects today's interest.";
+      add(tr, el("th", null, LABELS[k] || k), valCell);
+      add(t, tr);
+    });
+    return t;
+  }
+
+  function fetchText(url, opts) {
+    opts = opts || {}; opts.cache = "no-store";
+    return fetch(url, opts).then(function (r) {
+      return r.text().then(function (t) { return { status: r.status, text: t }; });
+    });
+  }
+
+  /* ---- pages ---------------------------------------------------------- */
+
+  function home() {
+    page("Welcome");
+    add(content,
+      el("p", null, "Welcome to LegacyWorks AccountView. This system looks up accounts. It does so when asked, and not otherwise."),
+      el("p", null, "To begin, choose Sign On from the menu. Having signed on, choose Account Search. Having searched, one is told what was found."));
+  }
+
+  /* THE VENDOR PUTS ITS NAME ON EVERYTHING, INCLUDING THE SCREEN WHERE YOU PROVE
+     YOU ARE ALLOWED TO SEE THE REST OF IT. */
+  function signonHero() {
+    var s = el("div", "splash");
+    add(s,
+      el("div", "mark", "LW"),
+      el("h3", null, "LegacyWorks AccountView"),
+      el("p", "tag", "Core Accounts Platform"));
+    return s;
+  }
+
+  function signon() {
+    var justSignedOff = !!(flash && flash.kind === "ok" && flash.text === "You have been signed off.");
+    /* REACHED BY WAY OF THE SEARCH GUARD, THIS FORM IS BUILT A LITTLE
+       DIFFERENTLY THAN THE ONE ON THE MAIN ROUTE. IT WAS NOT NOTICED. */
+    var viaSearchGuard = !!(flash && flash.kind === "err" && flash.text === "Please sign on first.");
+    page("Sign On");
+    add(content, signonHero());
+    var card = el("div", "login-card");
+    var f = el("form");
+    var t = el("table", "form");
+    function row(label, id, type) {
+      var tr = el("tr"), l = el("td"), i = el("td"), lab = el("label", null, label), inp = el("input");
+      lab.setAttribute("for", id);
+      inp.id = id; inp.type = type; inp.setAttribute("autocomplete", "off");
+      inp.setAttribute("autocapitalize", "off"); inp.spellcheck = false;
+      add(l, lab); add(i, inp); add(tr, l, i); add(t, tr);
+      return inp;
+    }
+    var u = row("User ID:", "f-user", "text");
+    var p = row("Password:", "f-pass", viaSearchGuard ? "text" : "password");
+    var b = el("button", null, "Sign On"); b.type = "submit";
+    var r = el("button", null, "Reset"); r.type = "reset";
+    add(f, t, el("p"), b, r);
+    add(card, f);
+    add(card, el("p", "fine", "Protected by LegacyWorks SecureAuth™. Unauthorised access is prohibited."));
+    add(content, card);
+    if (justSignedOff) {
+      add(content, el("p", "note", "Unauthorised use is discouraged."));
+    }
+    u.focus();
+    f.addEventListener("submit", function (e) {
+      e.preventDefault();
+      b.disabled = true;
+      fetchText("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "username=" + encodeURIComponent(u.value) + "&password=" + encodeURIComponent(p.value)
+      }).then(function (res) {
+        var o = parseKeepingNumbers(res.text);
+        if (res.status === 200 && o && o.token) {
+          token = o.token; userid = u.value;
+          startSessionTimer();
+          flash = { kind: "ok", text: "Sign-on accepted." };
+          go("#/search");
+        } else {
+          page("Sign On");
+          add(content, signonHero());
+          add(content, el("div", "box err", "Sign-on was not accepted."));
+          if (o) add(content, answerTable(o)); else add(content, el("p", null, res.text.slice(0, 2000)));
+          add(content, para(link("Try again", "#/signon", signon)));
+        }
+      }).catch(function () {
+        b.disabled = false;
+        flash = { kind: "err", text: "The host did not answer." };
+        signon();
+      });
+    });
+  }
+
+  function search() {
+    page("Account Search");
+    var f = el("form");
+    var t = el("table", "form");
+    var tr = el("tr"), l = el("td"), i = el("td");
+    var lab = el("label", null, "Account Number:"), inp = el("input");
+    lab.setAttribute("for", "f-acct");
+    inp.id = "f-acct"; inp.type = "text"; inp.setAttribute("autocomplete", "off");
+    inp.setAttribute("autocapitalize", "off"); inp.spellcheck = false;
+    add(l, lab); add(i, inp); add(tr, l, i); add(t, tr);
+    var b = el("button", null, "Search"); b.type = "submit";
+    var r = el("button", null, "Clear"); r.type = "reset";
+    add(f, t, el("p"), b, r);
+    add(content, f);
+    inp.focus();
+    f.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (inp.value === "") return;
+      location.hash = "#/result/" + encodeURIComponent(inp.value);
+    });
+  }
+
+  function result(code) {
+    var my = ++seq;
+    page("Search Result");
+    add(content, el("p", null, "Account number requested: " + code));
+    var wait = el("p", "note", "Please wait.");
+    add(content, wait);
+    fetchText("/search?account=" + encodeURIComponent(code), {
+      headers: { "Authorization": "Bearer " + token }
+    }).then(function (res) {
+      if (my !== seq) return;
+      content.removeChild(wait);
+      var o = parseKeepingNumbers(res.text);
+      var found = o && Object.prototype.hasOwnProperty.call(o, "account_code");
+      add(content, el("h3", null, found ? "Account Details" : "Message from Host"));
+      if (o) add(content, answerTable(o)); else add(content, el("p", null, res.text.slice(0, 2000) || "(The host said nothing.)"));
+      if (res.status === 401) {
+        add(content, el("div", "box ok", "Your session was not recognised. Please sign on again."));
+      }
+      add(content, para(link("New search", "#/search")));
+    }).catch(function () {
+      if (my !== seq) return;
+      content.removeChild(wait);
+      add(content, el("div", "box err", "The host did not answer."));
+      add(content, para(link("Back to search", "#/search")));
+    });
+  }
+
+  /* ---- navigation ----------------------------------------------------- */
+
+  function route() {
+    seq++;
+    var h = location.hash || "#/home";
+    var m;
+    if (h === "#/signoff") {
+      var was = token;
+      token = null; userid = "";
+      stopSessionTimer();
+      flash = was ? { kind: "ok", text: "You have been signed off.", hide: true } : null;
+      go("#/signon"); return;
+    }
+    if (h === "#/home") return home();
+    if (h === "#/signon") {
+      if (token) { go("#/search"); return; }
+      return signon();
+    }
+    if (h === "#/search" || (m = /^#\/result\/(.*)$/.exec(h))) {
+      if (!token) { flash = { kind: "err", text: "Please sign on first." }; go("#/signon"); return; }
+      if (m) {
+        var code;
+        try { code = decodeURIComponent(m[1]); } catch (e) { code = m[1]; }
+        return result(code);
+      }
+      return search();
+    }
+    home();
+  }
+
+  window.addEventListener("hashchange", route);
+  route();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+# Keep LF line endings everywhere so files mounted into Linux containers work on Windows too.
+* text=auto eol=lf
+*.cob text eol=lf
+*.cpy text eol=lf
+*.sh  text eol=lf
+*.sql text eol=lf
